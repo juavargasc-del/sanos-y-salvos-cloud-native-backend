@@ -1,5 +1,6 @@
 package com.sanosysalvos.usuarios.service.impl;
 
+import com.sanosysalvos.usuarios.dto.UserDTO;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.repository.UserRepository;
 import com.sanosysalvos.usuarios.service.UserService;
@@ -23,13 +24,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> listarUsuarios() {
-        return userRepository.findAll();
+    public List<UserDTO> listarUsuarios() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
     @Override
-    public Optional<User> buscarPorId(Long id) {
-        return userRepository.findById(id);
+    public Optional<UserDTO> buscarPorId(Long id) {
+        return userRepository.findById(id)
+                .map(this::convertirADTO);
     }
 
     @Override
@@ -40,5 +45,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public void eliminarUsuario(Long id) {
         userRepository.deleteById(id);
+    }
+
+    private UserDTO convertirADTO(User user) {
+
+        return UserDTO.builder()
+                .id(user.getId())
+                .nombre(user.getNombre())
+                .email(user.getEmail())
+                .rol(user.getRol())
+                .build();
     }
 }

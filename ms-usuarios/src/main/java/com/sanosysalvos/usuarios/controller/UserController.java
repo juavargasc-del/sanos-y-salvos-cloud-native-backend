@@ -4,6 +4,7 @@ import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.sanosysalvos.usuarios.dto.UserDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,14 +26,14 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> listarUsuarios() {
+    public ResponseEntity<List<UserDTO>> listarUsuarios() {
         return ResponseEntity.ok(userService.listarUsuarios());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> buscarPorId(@PathVariable Long id) {
 
-        Optional<User> usuario = userService.buscarPorId(id);
+        Optional<UserDTO> usuario = userService.buscarPorId(id);
 
         return usuario
                 .map(ResponseEntity::ok)
