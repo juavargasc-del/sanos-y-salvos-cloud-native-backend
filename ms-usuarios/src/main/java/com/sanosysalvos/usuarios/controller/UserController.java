@@ -1,12 +1,13 @@
 package com.sanosysalvos.usuarios.controller;
 
+import com.sanosysalvos.usuarios.config.JwtService;
 import com.sanosysalvos.usuarios.dto.LoginRequestDTO;
+import com.sanosysalvos.usuarios.dto.LoginResponse;
 import com.sanosysalvos.usuarios.dto.UserDTO;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,13 +18,13 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public UserController(UserService userService,
-                          PasswordEncoder passwordEncoder) {
+                          JwtService jwtService) {
 
         this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping
@@ -35,24 +36,22 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequestDTO request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
 
-        Optional<User> usuario = userService.buscarPorEmail(request.getEmail());
+        Optional<User> usuario =
+                userService.login(request.getEmail(), request.getPassword());
 
         if (usuario.isEmpty()) {
-            return ResponseEntity.badRequest().body("Usuario no encontrado");
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("Credenciales incorrectas");
         }
 
-        boolean passwordCorrecta = passwordEncoder.matches(
-                request.getPassword(),
-                usuario.get().getPassword()
-        );
+        String token =
+                jwtService.generarToken(usuario.get().getEmail());
 
-        if (!passwordCorrecta) {
-            return ResponseEntity.badRequest().body("Contraseña incorrecta");
-        }
-
-        return ResponseEntity.ok("Login exitoso");
+        return ResponseEntity.ok(new LoginResponse(token));
     }
 
     @GetMapping

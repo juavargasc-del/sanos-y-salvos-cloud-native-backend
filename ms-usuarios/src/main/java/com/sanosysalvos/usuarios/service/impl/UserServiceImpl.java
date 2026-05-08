@@ -32,7 +32,26 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Optional<User> login(String email, String password) {
+
+        Optional<User> usuario = userRepository.findByEmail(email);
+
+        if (usuario.isPresent()) {
+
+            boolean passwordCorrecta =
+                    passwordEncoder.matches(password, usuario.get().getPassword());
+
+            if (passwordCorrecta) {
+                return usuario;
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
     public List<UserDTO> listarUsuarios() {
+
         return userRepository.findAll()
                 .stream()
                 .map(this::convertirADTO)
@@ -41,17 +60,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<UserDTO> buscarPorId(Long id) {
+
         return userRepository.findById(id)
                 .map(this::convertirADTO);
     }
 
     @Override
     public Optional<User> buscarPorEmail(String email) {
+
         return userRepository.findByEmail(email);
     }
 
     @Override
     public void eliminarUsuario(Long id) {
+
         userRepository.deleteById(id);
     }
 

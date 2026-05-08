@@ -16,5 +16,7 @@ public interface UserService {
 
     Optional<User> buscarPorEmail(String email);
 
+    Optional<User> login(String email, String password);
+
     void eliminarUsuario(Long id);
 }
