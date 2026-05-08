@@ -1,10 +1,11 @@
 package com.sanosysalvos.usuarios.controller;
 
+import com.sanosysalvos.usuarios.dto.UserDTO;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.sanosysalvos.usuarios.dto.UserDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,13 +21,16 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> guardarUsuario(@RequestBody User user) {
+    public ResponseEntity<User> guardarUsuario(@Valid @RequestBody User user) {
+
         User nuevoUsuario = userService.guardarUsuario(user);
+
         return ResponseEntity.ok(nuevoUsuario);
     }
 
     @GetMapping
     public ResponseEntity<List<UserDTO>> listarUsuarios() {
+
         return ResponseEntity.ok(userService.listarUsuarios());
     }
 
