@@ -8,9 +8,9 @@ public interface UsuariosBffService {
 
     UserDTO crearUsuario(UserDTO userDTO);
 
-    Object listarUsuarios();
+    Object listarUsuarios(String token);
 
-    Object buscarUsuarioPorId(Long id);
+    Object buscarUsuarioPorId(Long id, String token);
 
     AuthResponseDTO login(LoginRequestDTO request);
 }

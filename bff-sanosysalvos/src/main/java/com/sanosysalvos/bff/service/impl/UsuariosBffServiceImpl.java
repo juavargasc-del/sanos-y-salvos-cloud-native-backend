@@ -6,6 +6,7 @@ import com.sanosysalvos.bff.dto.UserDTO;
 import com.sanosysalvos.bff.service.UsuariosBffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,19 +32,43 @@ public class UsuariosBffServiceImpl implements UsuariosBffService {
     }
 
     @Override
-    public Object listarUsuarios() {
+    public Object listarUsuarios(String token) {
 
         String url = usuariosUrl + "/api/usuarios";
 
-        return restTemplate.getForObject(url, Object.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Object> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                Object.class
+        );
+
+        return response.getBody();
     }
 
     @Override
-    public Object buscarUsuarioPorId(Long id) {
+    public Object buscarUsuarioPorId(Long id, String token) {
 
         String url = usuariosUrl + "/api/usuarios/" + id;
 
-        return restTemplate.getForObject(url, Object.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", token);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Object> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                Object.class
+        );
+
+        return response.getBody();
     }
 
     @Override
