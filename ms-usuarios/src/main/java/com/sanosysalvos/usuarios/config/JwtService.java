@@ -3,14 +3,22 @@ package com.sanosysalvos.usuarios.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
+import java.security.Key;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "mi_clave_secreta_super_segura";
+    private static final String SECRET_KEY =
+            "miclavesupersecretamiclavesupersecret12345";
+
+    private Key getSigningKey() {
+
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
 
     public String generarToken(String email) {
 
@@ -18,17 +26,28 @@ public class JwtService {
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extraerEmail(String token) {
 
-        Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+        return extraerClaims(token).getSubject();
+    }
+
+    private Claims extraerClaims(String token) {
+
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
 
-        return claims.getSubject();
+    public boolean tokenValido(String token, String email) {
+
+        final String emailToken = extraerEmail(token);
+
+        return emailToken.equals(email);
     }
 }
