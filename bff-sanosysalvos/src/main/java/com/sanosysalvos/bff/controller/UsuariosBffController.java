@@ -5,6 +5,7 @@ import com.sanosysalvos.bff.dto.LoginRequestDTO;
 import com.sanosysalvos.bff.dto.UserDTO;
 import com.sanosysalvos.bff.service.UsuariosBffService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,20 +27,23 @@ public class UsuariosBffController {
     }
 
     @GetMapping
-    public ResponseEntity<Object> listarUsuarios() {
+    public ResponseEntity<Object> listarUsuarios(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
 
         return ResponseEntity.ok(
-                usuariosBffService.listarUsuarios()
+                usuariosBffService.listarUsuarios(token)
         );
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> buscarUsuarioPorId(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
     ) {
 
         return ResponseEntity.ok(
-                usuariosBffService.buscarUsuarioPorId(id)
+                usuariosBffService.buscarUsuarioPorId(id, token)
         );
     }
 
