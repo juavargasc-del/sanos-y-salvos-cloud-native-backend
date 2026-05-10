@@ -1,5 +1,10 @@
 package com.sanosysalvos.coincidencias.service;
 
-public class CoincidenciaService {
+import com.sanosysalvos.coincidencias.dto.CoincidenciaDTO;
 
+import java.util.List;
+
+public interface CoincidenciaService {
+
+    List<CoincidenciaDTO> buscarCoincidencias();
 }
