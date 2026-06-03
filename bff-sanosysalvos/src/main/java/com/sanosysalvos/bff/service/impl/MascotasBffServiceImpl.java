@@ -1,55 +1,51 @@
 package com.sanosysalvos.bff.service.impl;
 
+import com.sanosysalvos.bff.client.MascotasFeignClient;
 import com.sanosysalvos.bff.dto.MascotaDTO;
 import com.sanosysalvos.bff.service.MascotasBffService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class MascotasBffServiceImpl implements MascotasBffService {
 
-    private final RestTemplate restTemplate;
-
-    @Value("${ms.mascotas.url}")
-    private String mascotasUrl;
+    private final MascotasFeignClient mascotasFeignClient;
 
     @Override
     public MascotaDTO crearMascota(MascotaDTO mascotaDTO) {
-        String url = mascotasUrl + "/api/mascotas";
-        return restTemplate.postForObject(url, mascotaDTO, MascotaDTO.class);
+
+        return mascotasFeignClient.crearMascota(mascotaDTO);
     }
 
     @Override
     public Object listarMascotas() {
-        String url = mascotasUrl + "/api/mascotas";
-        return restTemplate.getForObject(url, Object.class);
+
+        return mascotasFeignClient.listarMascotas();
     }
 
     @Override
     public Object buscarMascotaPorId(Long id) {
-        String url = mascotasUrl + "/api/mascotas/" + id;
-        return restTemplate.getForObject(url, Object.class);
+
+        return mascotasFeignClient.buscarMascotaPorId(id);
     }
 
     @Override
     public Object listarPorEstado(String estado) {
-        String url = mascotasUrl + "/api/mascotas/estado/" + estado;
-        return restTemplate.getForObject(url, Object.class);
+
+        return mascotasFeignClient.listarPorEstado(estado);
     }
 
     @Override
     public Object actualizarMascota(Long id, MascotaDTO mascotaDTO) {
-        String url = mascotasUrl + "/api/mascotas/" + id;
-        restTemplate.put(url, mascotaDTO);
+
+        mascotasFeignClient.actualizarMascota(id, mascotaDTO);
         return "Mascota actualizada correctamente desde BFF";
     }
 
     @Override
     public void eliminarMascota(Long id) {
-        String url = mascotasUrl + "/api/mascotas/" + id;
-        restTemplate.delete(url);
+
+        mascotasFeignClient.eliminarMascota(id);
     }
 }
