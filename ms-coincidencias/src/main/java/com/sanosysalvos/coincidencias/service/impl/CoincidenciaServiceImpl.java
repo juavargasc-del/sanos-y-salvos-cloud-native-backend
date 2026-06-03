@@ -1,12 +1,11 @@
 package com.sanosysalvos.coincidencias.service.impl;
 
+import com.sanosysalvos.coincidencias.client.MascotasFeignClient;
 import com.sanosysalvos.coincidencias.dto.CoincidenciaDTO;
 import com.sanosysalvos.coincidencias.dto.MascotaDTO;
 import com.sanosysalvos.coincidencias.service.CoincidenciaService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,16 +15,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CoincidenciaServiceImpl implements CoincidenciaService {
 
-    private final RestTemplate restTemplate;
-
-    @Value("${ms.mascotas.url}")
-    private String mascotasUrl;
+    private final MascotasFeignClient mascotasFeignClient;
 
     @Override
     public List<CoincidenciaDTO> buscarCoincidencias() {
-        String url = mascotasUrl + "/api/mascotas";
-
-        MascotaDTO[] mascotasArray = restTemplate.getForObject(url, MascotaDTO[].class);
+        MascotaDTO[] mascotasArray = mascotasFeignClient.listarMascotas();
 
         if (mascotasArray == null || mascotasArray.length == 0) {
             return new ArrayList<>();
