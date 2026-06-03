@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +39,9 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
 
         for (MascotaDTO perdida : perdidas) {
             for (MascotaDTO encontrada : encontradas) {
-                if (esCoincidencia(perdida, encontrada)) {
+                int porcentajeCoincidencia = calcularPorcentajeCoincidencia(perdida, encontrada);
+
+                if (porcentajeCoincidencia >= 50) {
                     coincidencias.add(CoincidenciaDTO.builder()
                             .idMascotaPerdida(perdida.getId())
                             .idMascotaEncontrada(encontrada.getId())
@@ -47,7 +50,10 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
                             .tipo(perdida.getTipo())
                             .raza(perdida.getRaza())
                             .color(perdida.getColor())
-                            .descripcion("Posible coincidencia por tipo, raza y color")
+                            .edad(perdida.getEdad())
+                            .dimension(perdida.getDimension())
+                            .porcentajeCoincidencia(porcentajeCoincidencia)
+                            .descripcion("Posible coincidencia por raza, color, edad y dimension")
                             .build());
                 }
             }
@@ -56,12 +62,31 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
         return coincidencias;
     }
 
-    private boolean esCoincidencia(MascotaDTO perdida, MascotaDTO encontrada) {
-        return perdida.getTipo() != null
-                && perdida.getRaza() != null
-                && perdida.getColor() != null
-                && perdida.getTipo().equalsIgnoreCase(encontrada.getTipo())
-                && perdida.getRaza().equalsIgnoreCase(encontrada.getRaza())
-                && perdida.getColor().equalsIgnoreCase(encontrada.getColor());
+    private int calcularPorcentajeCoincidencia(MascotaDTO perdida, MascotaDTO encontrada) {
+        int coincidencias = 0;
+
+        if (coincidenIgnorandoMayusculas(perdida.getRaza(), encontrada.getRaza())) {
+            coincidencias++;
+        }
+
+        if (coincidenIgnorandoMayusculas(perdida.getColor(), encontrada.getColor())) {
+            coincidencias++;
+        }
+
+        if (Objects.equals(perdida.getEdad(), encontrada.getEdad())) {
+            coincidencias++;
+        }
+
+        if (coincidenIgnorandoMayusculas(perdida.getDimension(), encontrada.getDimension())) {
+            coincidencias++;
+        }
+
+        return coincidencias * 25;
+    }
+
+    private boolean coincidenIgnorandoMayusculas(String valorIzquierdo, String valorDerecho) {
+        return valorIzquierdo != null
+                && valorDerecho != null
+                && valorIzquierdo.equalsIgnoreCase(valorDerecho);
     }
 }

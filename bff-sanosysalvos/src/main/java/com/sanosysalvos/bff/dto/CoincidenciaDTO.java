@@ -19,5 +19,10 @@ public class CoincidenciaDTO {
     private String raza;
     private String color;
 
+    private Integer edad;
+    private String dimension;
+
+    private Integer porcentajeCoincidencia;
+
     private String descripcion;
 }

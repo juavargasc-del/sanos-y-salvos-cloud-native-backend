@@ -29,5 +29,11 @@ public class Mascota {
     private String color;
 
     @Column(nullable = false)
+    private Integer edad;
+
+    @Column(nullable = false)
+    private String dimension;
+
+    @Column(nullable = false)
     private String estado; // PERDIDA o ENCONTRADA
 }

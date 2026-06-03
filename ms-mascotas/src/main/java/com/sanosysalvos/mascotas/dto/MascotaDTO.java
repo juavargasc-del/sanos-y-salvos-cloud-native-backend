@@ -14,5 +14,7 @@ public class MascotaDTO {
     private String tipo;
     private String raza;
     private String color;
+    private Integer edad;
+    private String dimension;
     private String estado;
 }
