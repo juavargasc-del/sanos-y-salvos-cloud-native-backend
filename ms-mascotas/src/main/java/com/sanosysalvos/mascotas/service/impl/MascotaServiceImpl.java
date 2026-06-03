@@ -55,6 +55,8 @@ public class MascotaServiceImpl implements MascotaService {
         mascota.setTipo(mascotaDTO.getTipo());
         mascota.setRaza(mascotaDTO.getRaza());
         mascota.setColor(mascotaDTO.getColor());
+        mascota.setEdad(mascotaDTO.getEdad());
+        mascota.setDimension(mascotaDTO.getDimension());
         mascota.setEstado(mascotaDTO.getEstado());
 
         Mascota mascotaActualizada = mascotaRepository.save(mascota);
@@ -76,6 +78,8 @@ public class MascotaServiceImpl implements MascotaService {
                 .tipo(mascotaDTO.getTipo())
                 .raza(mascotaDTO.getRaza())
                 .color(mascotaDTO.getColor())
+                .edad(mascotaDTO.getEdad())
+                .dimension(mascotaDTO.getDimension())
                 .estado(mascotaDTO.getEstado())
                 .build();
     }
@@ -87,6 +91,8 @@ public class MascotaServiceImpl implements MascotaService {
                 .tipo(mascota.getTipo())
                 .raza(mascota.getRaza())
                 .color(mascota.getColor())
+            .edad(mascota.getEdad())
+            .dimension(mascota.getDimension())
                 .estado(mascota.getEstado())
                 .build();
     }
