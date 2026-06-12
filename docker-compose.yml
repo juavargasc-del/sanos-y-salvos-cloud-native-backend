@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sanosysalvos-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sanosysalvos_usuarios
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - sanosysalvos-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  ms-usuarios:
+    build:
+      context: ./ms-usuarios
+    container_name: ms-usuarios
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - sanosysalvos-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanosysalvos_usuarios?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+
+  ms-mascotas:
+    build:
+      context: ./ms-mascotas
+    container_name: ms-mascotas
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - sanosysalvos-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanosysalvos_mascotas?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+
+  ms-coincidencias:
+    build:
+      context: ./ms-coincidencias
+    container_name: ms-coincidencias
+    ports:
+      - "8083:8083"
+    depends_on:
+      - ms-mascotas
+    networks:
+      - sanosysalvos-network
+    environment:
+      MS_MASCOTAS_URL: http://ms-mascotas:8082
+
+  bff-sanosysalvos:
+    build:
+      context: ./bff-sanosysalvos
+    container_name: bff-sanosysalvos
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ms-usuarios
+      - ms-mascotas
+      - ms-coincidencias
+    networks:
+      - sanosysalvos-network
+    environment:
+      MS_MASCOTAS_URL: http://ms-mascotas:8082
+      MS_USUARIOS_URL: http://ms-usuarios:8081
+      MS_COINCIDENCIAS_URL: http://ms-coincidencias:8083
+
+networks:
+  sanosysalvos-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
