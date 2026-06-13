@@ -1,5 +1,6 @@
 package com.sanosysalvos.geolocalizacion.service;
 
+import com.sanosysalvos.geolocalizacion.dto.DistanciaResponseDTO;
 import com.sanosysalvos.geolocalizacion.dto.UbicacionMascotaDTO;
 import com.sanosysalvos.geolocalizacion.dto.UbicacionMascotaRequestDTO;
 
@@ -12,4 +13,8 @@ public interface UbicacionMascotaService {
     List<UbicacionMascotaDTO> listarUbicaciones();
 
     UbicacionMascotaDTO obtenerUbicacionPorMascota(Long mascotaId);
+
+    DistanciaResponseDTO calcularDistancia(double lat1, double lon1, double lat2, double lon2);
+
+    List<UbicacionMascotaDTO> buscarUbicacionesCercanas(double lat, double lon, double radioKm);
 }
