@@ -24,6 +24,9 @@ public interface MascotasFeignClient {
     @GetMapping("/api/mascotas/estado/{estado}")
     Object listarPorEstado(@PathVariable("estado") String estado);
 
+    @GetMapping("/api/mascotas/usuario/{usuarioId}")
+    Object listarPorUsuarioId(@PathVariable("usuarioId") Long usuarioId);
+
     @PutMapping("/api/mascotas/{id}")
     void actualizarMascota(@PathVariable("id") Long id, @RequestBody MascotaDTO mascotaDTO);
 

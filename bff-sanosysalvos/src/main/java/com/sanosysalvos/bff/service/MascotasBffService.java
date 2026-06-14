@@ -12,6 +12,8 @@ public interface MascotasBffService {
 
     Object listarPorEstado(String estado);
 
+    Object listarPorUsuarioId(Long usuarioId);
+
     Object actualizarMascota(Long id, MascotaDTO mascotaDTO);
 
     void eliminarMascota(Long id);

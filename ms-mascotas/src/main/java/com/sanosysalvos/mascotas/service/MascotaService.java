@@ -14,6 +14,8 @@ public interface MascotaService {
 
     List<MascotaDTO> listarPorEstado(String estado);
 
+    List<MascotaDTO> listarPorUsuarioId(Long usuarioId);
+
     MascotaDTO actualizarMascota(Long id, MascotaDTO mascotaDTO);
 
     void eliminarMascota(Long id);

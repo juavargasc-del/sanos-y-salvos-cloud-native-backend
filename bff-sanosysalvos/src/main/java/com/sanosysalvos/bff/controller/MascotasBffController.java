@@ -35,6 +35,11 @@ public class MascotasBffController {
         return ResponseEntity.ok(mascotasBffService.listarPorEstado(estado));
     }
 
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<Object> listarPorUsuarioId(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(mascotasBffService.listarPorUsuarioId(usuarioId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Object> actualizarMascota(
             @PathVariable Long id,

@@ -37,6 +37,12 @@ public class MascotasBffServiceImpl implements MascotasBffService {
     }
 
     @Override
+    public Object listarPorUsuarioId(Long usuarioId) {
+
+        return mascotasFeignClient.listarPorUsuarioId(usuarioId);
+    }
+
+    @Override
     public Object actualizarMascota(Long id, MascotaDTO mascotaDTO) {
 
         mascotasFeignClient.actualizarMascota(id, mascotaDTO);
