@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +34,28 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
 
     @Override
     public List<CoincidenciaDTO> buscarCoincidencias() {
-        MascotaDTO[] mascotasArray = mascotasFeignClient.listarMascotas();
+        return calcularCoincidenciasConMascotas(mascotasFeignClient.listarMascotas());
+    }
 
+    @Override
+    public List<CoincidenciaDTO> buscarCoincidenciasPorUsuario(Long usuarioId) {
+        MascotaDTO[] mascotasUsuario = mascotasFeignClient.listarMascotasPorUsuario(usuarioId);
+
+        if (mascotasUsuario == null || mascotasUsuario.length == 0) {
+            return new ArrayList<>();
+        }
+
+        Set<Long> idsUsuario = Arrays.stream(mascotasUsuario)
+                .map(MascotaDTO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        return buscarCoincidencias().stream()
+                .filter(coincidencia -> perteneceAlUsuario(coincidencia, idsUsuario))
+                .toList();
+    }
+
+    private List<CoincidenciaDTO> calcularCoincidenciasConMascotas(MascotaDTO[] mascotasArray) {
         if (mascotasArray == null || mascotasArray.length == 0) {
             return new ArrayList<>();
         }
@@ -116,6 +139,11 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
                 .porcentajeCoincidencia(porcentajeFinal)
                 .descripcion(descripcion)
                 .build();
+    }
+
+    private boolean perteneceAlUsuario(CoincidenciaDTO coincidencia, Set<Long> idsUsuario) {
+        return (coincidencia.getIdMascotaPerdida() != null && idsUsuario.contains(coincidencia.getIdMascotaPerdida()))
+                || (coincidencia.getIdMascotaEncontrada() != null && idsUsuario.contains(coincidencia.getIdMascotaEncontrada()));
     }
 
     private DistanciaResponseDTO obtenerDistanciaEntreMascotas(Long mascotaPerdidaId, Long mascotaEncontradaId) {

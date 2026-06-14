@@ -16,4 +16,10 @@ public class CoincidenciasBffServiceImpl implements CoincidenciasBffService {
 
         return coincidenciasFeignClient.buscarCoincidencias();
     }
+
+    @Override
+    public Object buscarCoincidenciasPorUsuario(Long usuarioId) {
+
+        return coincidenciasFeignClient.buscarCoincidenciasPorUsuario(usuarioId);
+    }
 }

@@ -19,4 +19,9 @@ public class CoincidenciaController {
     public ResponseEntity<List<CoincidenciaDTO>> buscarCoincidencias() {
         return ResponseEntity.ok(coincidenciaService.buscarCoincidencias());
     }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<CoincidenciaDTO>> buscarCoincidenciasPorUsuario(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(coincidenciaService.buscarCoincidenciasPorUsuario(usuarioId));
+    }
 }
