@@ -51,7 +51,17 @@ public class UserController {
         String token =
                 jwtService.generarToken(usuario.get().getEmail());
 
-        return ResponseEntity.ok(new LoginResponse(token));
+    User user = usuario.get();
+
+    return ResponseEntity.ok(
+        LoginResponse.builder()
+            .token(token)
+            .userId(user.getId())
+            .nombre(user.getNombre())
+            .email(user.getEmail())
+            .rol(user.getRol())
+            .build()
+    );
     }
 
     @GetMapping
