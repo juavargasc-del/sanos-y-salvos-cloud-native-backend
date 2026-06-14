@@ -3,6 +3,8 @@ package com.sanosysalvos.mascotas.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "mascotas")
 @Getter
@@ -36,6 +38,9 @@ public class Mascota {
 
     @Column(name = "usuario_id")
     private Long usuarioId;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaReporte;
 
     @Column(nullable = false)
     private String estado; // PERDIDA o ENCONTRADA

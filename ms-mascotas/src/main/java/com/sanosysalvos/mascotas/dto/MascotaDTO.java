@@ -2,6 +2,8 @@ package com.sanosysalvos.mascotas.dto;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,5 +19,6 @@ public class MascotaDTO {
     private Integer edad;
     private String dimension;
     private Long usuarioId;
+    private LocalDateTime fechaReporte;
     private String estado;
 }
