@@ -39,6 +39,9 @@ public class Mascota {
     @Column(name = "usuario_id")
     private Long usuarioId;
 
+    @Column(columnDefinition = "LONGTEXT")
+    private String fotoBase64;
+
     @Column(nullable = false)
     private LocalDateTime fechaReporte;
 

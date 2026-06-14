@@ -67,6 +67,7 @@ public class MascotaServiceImpl implements MascotaService {
         mascota.setEdad(mascotaDTO.getEdad());
         mascota.setDimension(mascotaDTO.getDimension());
         mascota.setUsuarioId(mascotaDTO.getUsuarioId());
+        mascota.setFotoBase64(mascotaDTO.getFotoBase64());
         mascota.setEstado(mascotaDTO.getEstado());
 
         Mascota mascotaActualizada = mascotaRepository.save(mascota);
@@ -91,6 +92,7 @@ public class MascotaServiceImpl implements MascotaService {
                 .edad(mascotaDTO.getEdad())
                 .dimension(mascotaDTO.getDimension())
                 .usuarioId(mascotaDTO.getUsuarioId())
+                .fotoBase64(mascotaDTO.getFotoBase64())
                 .fechaReporte(LocalDateTime.now())
                 .estado(mascotaDTO.getEstado())
                 .build();
@@ -106,6 +108,7 @@ public class MascotaServiceImpl implements MascotaService {
             .edad(mascota.getEdad())
             .dimension(mascota.getDimension())
                 .usuarioId(mascota.getUsuarioId())
+                .fotoBase64(mascota.getFotoBase64())
                 .fechaReporte(mascota.getFechaReporte())
                 .estado(mascota.getEstado())
                 .build();

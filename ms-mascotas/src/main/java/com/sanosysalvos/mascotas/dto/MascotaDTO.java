@@ -19,6 +19,7 @@ public class MascotaDTO {
     private Integer edad;
     private String dimension;
     private Long usuarioId;
+    private String fotoBase64;
     private LocalDateTime fechaReporte;
     private String estado;
 }
