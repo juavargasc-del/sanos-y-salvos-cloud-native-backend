@@ -16,4 +16,9 @@ public class CoincidenciasBffController {
     public ResponseEntity<Object> buscarCoincidencias() {
         return ResponseEntity.ok(coincidenciasBffService.buscarCoincidencias());
     }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<Object> buscarCoincidenciasPorUsuario(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(coincidenciasBffService.buscarCoincidenciasPorUsuario(usuarioId));
+    }
 }
