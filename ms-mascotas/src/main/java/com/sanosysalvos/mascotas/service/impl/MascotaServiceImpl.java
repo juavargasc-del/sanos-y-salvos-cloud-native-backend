@@ -7,6 +7,7 @@ import com.sanosysalvos.mascotas.service.MascotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -90,6 +91,7 @@ public class MascotaServiceImpl implements MascotaService {
                 .edad(mascotaDTO.getEdad())
                 .dimension(mascotaDTO.getDimension())
                 .usuarioId(mascotaDTO.getUsuarioId())
+                .fechaReporte(LocalDateTime.now())
                 .estado(mascotaDTO.getEstado())
                 .build();
     }
@@ -104,6 +106,7 @@ public class MascotaServiceImpl implements MascotaService {
             .edad(mascota.getEdad())
             .dimension(mascota.getDimension())
                 .usuarioId(mascota.getUsuarioId())
+                .fechaReporte(mascota.getFechaReporte())
                 .estado(mascota.getEstado())
                 .build();
     }
