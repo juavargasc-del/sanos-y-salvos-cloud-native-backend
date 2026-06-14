@@ -34,6 +34,9 @@ public class Mascota {
     @Column(nullable = false)
     private String dimension;
 
+    @Column(name = "usuario_id")
+    private Long usuarioId;
+
     @Column(nullable = false)
     private String estado; // PERDIDA o ENCONTRADA
 }

@@ -47,6 +47,14 @@ public class MascotaServiceImpl implements MascotaService {
     }
 
     @Override
+    public List<MascotaDTO> listarPorUsuarioId(Long usuarioId) {
+        return mascotaRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+    }
+
+    @Override
     public MascotaDTO actualizarMascota(Long id, MascotaDTO mascotaDTO) {
         Mascota mascota = mascotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mascota no encontrada con id: " + id));
@@ -57,6 +65,7 @@ public class MascotaServiceImpl implements MascotaService {
         mascota.setColor(mascotaDTO.getColor());
         mascota.setEdad(mascotaDTO.getEdad());
         mascota.setDimension(mascotaDTO.getDimension());
+        mascota.setUsuarioId(mascotaDTO.getUsuarioId());
         mascota.setEstado(mascotaDTO.getEstado());
 
         Mascota mascotaActualizada = mascotaRepository.save(mascota);
@@ -80,6 +89,7 @@ public class MascotaServiceImpl implements MascotaService {
                 .color(mascotaDTO.getColor())
                 .edad(mascotaDTO.getEdad())
                 .dimension(mascotaDTO.getDimension())
+                .usuarioId(mascotaDTO.getUsuarioId())
                 .estado(mascotaDTO.getEstado())
                 .build();
     }
@@ -93,6 +103,7 @@ public class MascotaServiceImpl implements MascotaService {
                 .color(mascota.getColor())
             .edad(mascota.getEdad())
             .dimension(mascota.getDimension())
+                .usuarioId(mascota.getUsuarioId())
                 .estado(mascota.getEstado())
                 .build();
     }

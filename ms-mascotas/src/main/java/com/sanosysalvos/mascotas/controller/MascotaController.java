@@ -37,6 +37,11 @@ public class MascotaController {
         return ResponseEntity.ok(mascotaService.listarPorEstado(estado));
     }
 
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<MascotaDTO>> listarPorUsuarioId(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(mascotaService.listarPorUsuarioId(usuarioId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<MascotaDTO> actualizarMascota(
             @PathVariable Long id,
