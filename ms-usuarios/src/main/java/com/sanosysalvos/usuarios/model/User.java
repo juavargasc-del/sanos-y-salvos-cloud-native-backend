@@ -33,7 +33,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @NotBlank(message = "El rol es obligatorio")
     @Column(nullable = false)
     private String rol;
+
+    @PrePersist
+    void asignarRolPorDefecto() {
+        if (rol == null || rol.isBlank()) {
+            rol = "USUARIO";
+        }
+    }
 }
