@@ -26,6 +26,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User guardarUsuario(User user) {
 
+        if (user.getRol() == null || user.getRol().isBlank()) {
+            user.setRol("USUARIO");
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         return userRepository.save(user);
