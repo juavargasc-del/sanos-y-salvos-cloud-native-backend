@@ -132,6 +132,25 @@ services:
       MS_COINCIDENCIAS_URL: http://ms-coincidencias:8083
       MS_GEOLOCALIZACION_URL: http://ms-geolocalizacion:8084
 
+  gateway-sanosysalvos:
+    build:
+      context: ./gateway-sanosysalvos
+    container_name: gateway-sanosysalvos
+    ports:
+      - "8085:8080"
+    depends_on:
+      - ms-usuarios
+      - ms-mascotas
+      - ms-coincidencias
+      - ms-geolocalizacion
+    networks:
+      - sanosysalvos-network
+    environment:
+      MS_MASCOTAS_URL: http://ms-mascotas:8082
+      MS_USUARIOS_URL: http://ms-usuarios:8081
+      MS_COINCIDENCIAS_URL: http://ms-coincidencias:8083
+      MS_GEOLOCALIZACION_URL: http://ms-geolocalizacion:8084
+
 networks:
   sanosysalvos-network:
     driver: bridge
