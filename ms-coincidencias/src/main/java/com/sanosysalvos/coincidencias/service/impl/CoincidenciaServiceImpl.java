@@ -7,8 +7,11 @@ import com.sanosysalvos.coincidencias.dto.DistanciaResponseDTO;
 import com.sanosysalvos.coincidencias.dto.MascotaDTO;
 import com.sanosysalvos.coincidencias.dto.UbicacionMascotaDTO;
 import com.sanosysalvos.coincidencias.service.CoincidenciaService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,6 +34,10 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
 
     private final MascotasFeignClient mascotasFeignClient;
     private final GeolocalizacionFeignClient geolocalizacionFeignClient;
+
+    @Lazy
+    @Autowired
+    private CoincidenciaServiceImpl self;
 
     @Override
     public List<CoincidenciaDTO> buscarCoincidencias() {
@@ -116,7 +123,14 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
         int porcentajeFinal = porcentajeVisual;
         String descripcion = DESCRIPCION_VISUAL;
 
-        DistanciaResponseDTO distanciaResponseDTO = obtenerDistanciaEntreMascotas(perdida.getId(), encontrada.getId());
+        DistanciaResponseDTO distanciaResponseDTO;
+
+        try {
+            CoincidenciaServiceImpl servicioDistancia = self != null ? self : this;
+            distanciaResponseDTO = servicioDistancia.obtenerDistanciaEntreMascotas(perdida.getId(), encontrada.getId());
+        } catch (FeignException exception) {
+            distanciaResponseDTO = null;
+        }
 
         if (distanciaResponseDTO != null
                 && distanciaResponseDTO.getDistanciaKm() != null
@@ -146,23 +160,26 @@ public class CoincidenciaServiceImpl implements CoincidenciaService {
                 || (coincidencia.getIdMascotaEncontrada() != null && idsUsuario.contains(coincidencia.getIdMascotaEncontrada()));
     }
 
-    private DistanciaResponseDTO obtenerDistanciaEntreMascotas(Long mascotaPerdidaId, Long mascotaEncontradaId) {
-        try {
-            UbicacionMascotaDTO ubicacionPerdida = geolocalizacionFeignClient.obtenerUbicacionPorMascota(mascotaPerdidaId);
-            UbicacionMascotaDTO ubicacionEncontrada = geolocalizacionFeignClient.obtenerUbicacionPorMascota(mascotaEncontradaId);
+    @CircuitBreaker(name = "geolocalizacionCircuitBreaker", fallbackMethod = "fallbackObtenerDistanciaEntreMascotas")
+    public DistanciaResponseDTO obtenerDistanciaEntreMascotas(Long mascotaPerdidaId, Long mascotaEncontradaId) {
+        UbicacionMascotaDTO ubicacionPerdida = geolocalizacionFeignClient.obtenerUbicacionPorMascota(mascotaPerdidaId);
+        UbicacionMascotaDTO ubicacionEncontrada = geolocalizacionFeignClient.obtenerUbicacionPorMascota(mascotaEncontradaId);
 
-            if (ubicacionPerdida == null || ubicacionEncontrada == null) {
-                return null;
-            }
-
-            return geolocalizacionFeignClient.calcularDistancia(
-                    ubicacionPerdida.getLatitud(),
-                    ubicacionPerdida.getLongitud(),
-                    ubicacionEncontrada.getLatitud(),
-                    ubicacionEncontrada.getLongitud()
-            );
-        } catch (FeignException exception) {
+        if (ubicacionPerdida == null || ubicacionEncontrada == null) {
             return null;
         }
+
+        return geolocalizacionFeignClient.calcularDistancia(
+                ubicacionPerdida.getLatitud(),
+                ubicacionPerdida.getLongitud(),
+                ubicacionEncontrada.getLatitud(),
+                ubicacionEncontrada.getLongitud()
+        );
+    }
+
+    private DistanciaResponseDTO fallbackObtenerDistanciaEntreMascotas(Long mascotaPerdidaId,
+                                                                       Long mascotaEncontradaId,
+                                                                       Throwable throwable) {
+        return null;
     }
 }
