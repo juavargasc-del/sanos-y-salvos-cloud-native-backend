@@ -5,6 +5,9 @@ import com.sanosysalvos.usuarios.dto.AuthRequestDTO;
 import com.sanosysalvos.usuarios.dto.AuthResponseDTO;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticación", description = "Operaciones de inicio de sesión del microservicio de usuarios")
 public class AuthController {
 
     private final UserService userService;
@@ -29,6 +33,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Iniciar sesión", description = "Valida las credenciales del usuario y devuelve un token JWT")
+    @ApiResponse(responseCode = "200", description = "Autenticación exitosa")
+    @ApiResponse(responseCode = "400", description = "Usuario no encontrado o contraseña incorrecta")
     public ResponseEntity<?> login(@RequestBody AuthRequestDTO request) {
 
         Optional<User> usuario = userService.buscarPorEmail(request.getEmail());
