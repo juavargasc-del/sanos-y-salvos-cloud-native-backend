@@ -14,7 +14,7 @@ La arquitectura implementada se basa en microservicios con una capa de entrada c
 
 - **API Gateway como punto único de entrada**: `gateway-sanosysalvos` expone las rutas públicas del backend en el puerto `8080` y reescribe las solicitudes hacia los microservicios internos.
 - **Microservicios independientes**: cada dominio funcional está separado en su propio módulo Spring Boot.
-- **Comunicación mediante OpenFeign**: `ms-coincidencias` y el módulo `bff-sanosysalvos` consumen otros servicios de forma declarativa.
+- **Comunicación mediante OpenFeign**: `ms-coincidencias` consume los microservicios de Mascotas y Geolocalización mediante clientes Feign para calcular coincidencias entre mascotas perdidas y encontradas.
 - **Bases de datos independientes por dominio**: `ms-usuarios`, `ms-mascotas` y `ms-geolocalizacion` usan MySQL con esquemas separados; `ms-coincidencias` no persiste datos propios.
 - **Docker y Docker Compose**: el entorno local se define con contenedores para los microservicios, Gateway, MySQL y SonarQube.
 - **JWT para autenticación**: los servicios protegidos generan y validan tokens JWT.
@@ -22,10 +22,6 @@ La arquitectura implementada se basa en microservicios con una capa de entrada c
 - **Resilience4J Circuit Breaker**: implementado en `ms-coincidencias` para proteger las llamadas hacia `ms-geolocalizacion`.
 - **Swagger/OpenAPI**: cada microservicio MVC expone documentación con springdoc-openapi.
 - **Separación por capas**: controlador, servicio, repositorio, DTO, modelo y configuración.
-
-### Módulo BFF existente en el repositorio
-
-El repositorio también incluye un módulo **BFF (`bff-sanosysalvos`)** basado en OpenFeign, CORS y propagación del JWT. Conserva controladores bajo `/bff/**` y clientes Feign hacia los microservicios. Sin embargo, el despliegue actual definido en `docker-compose.yml` utiliza **Gateway** como entrada principal.
 
 ### Patrones de diseño observables
 
@@ -40,17 +36,22 @@ El repositorio también incluye un módulo **BFF (`bff-sanosysalvos`)** basado e
 ## Diagrama textual de arquitectura
 
 ```txt
-Cliente / Frontend
-↓
-API Gateway (8080)
-↓
-ms-usuarios (8081)
-ms-mascotas (8082)
-ms-coincidencias (8083)
-ms-geolocalizacion (8084)
+                Frontend React
+                      │
+                      ▼
+          API Gateway (Puerto 8080)
+                      │
+      ┌───────────────┼────────────────┐
+      ▼               ▼                ▼
+ms-usuarios      ms-mascotas    ms-coincidencias
+   (8081)           (8082)            (8083)
+                                          │
+                         ┌────────────────┴─────────────┐
+                         ▼                              ▼
+                  ms-mascotas (Feign)      ms-geolocalizacion (Feign)
+                                               (8084)
 ```
-
-El cliente consume el Gateway y este redirige a los microservicios según la ruta solicitada. El BFF existe en el repositorio como capa adicional basada en Feign, pero no es el punto de entrada principal del despliegue actual.
+El cliente consume el Gateway y este redirige a los microservicios según la ruta solicitada.
 
 ## Microservicios
 
@@ -112,13 +113,6 @@ El cliente consume el Gateway y este redirige a los microservicios según la rut
   - `/bff/coincidencias/**` -> `ms-coincidencias`
   - `/bff/geolocalizacion/**` -> `ms-geolocalizacion`
 - **Tecnologías utilizadas**: Spring Boot, Spring Cloud Gateway, CORS reactivo, Maven, Lombok.
-
-### bff-sanosysalvos
-
-- **Responsabilidad**: capa de delegación con OpenFeign y propagación del JWT.
-- **Puerto**: `8080`.
-- **Endpoints principales**: rutas `/bff/**` para usuarios, mascotas, coincidencias y geolocalización.
-- **Tecnologías utilizadas**: Spring Boot, Spring Web, Spring Cloud OpenFeign, CORS, JWT propagation, Lombok.
 
 ## Tecnologías
 
@@ -207,10 +201,10 @@ Variables realmente utilizadas en el proyecto:
 | `SPRING_DATASOURCE_URL` | `jdbc:mysql://localhost:3306/sanosysalvos_usuarios?createDatabaseIfNotExist=true` / `sanosysalvos_mascotas` / `sanosysalvos_geolocalizacion` | Conexión MySQL en `ms-usuarios`, `ms-mascotas` y `ms-geolocalizacion` |
 | `SPRING_DATASOURCE_USERNAME` | `root` | Usuario MySQL de los microservicios con persistencia |
 | `SPRING_DATASOURCE_PASSWORD` | vacío | Contraseña MySQL de los microservicios con persistencia |
-| `MS_USUARIOS_URL` | `http://localhost:8081` | Gateway, BFF y `ms-coincidencias` |
-| `MS_MASCOTAS_URL` | `http://localhost:8082` | Gateway, BFF y `ms-coincidencias` |
-| `MS_COINCIDENCIAS_URL` | `http://localhost:8083` | Gateway y BFF |
-| `MS_GEOLOCALIZACION_URL` | `http://localhost:8084` | Gateway, BFF y `ms-coincidencias` |
+| `MS_USUARIOS_URL` | `http://localhost:8081` | API Gateway |
+| `MS_MASCOTAS_URL` | `http://localhost:8082` | API Gateway y `ms-coincidencias` |
+| `MS_COINCIDENCIAS_URL` | `http://localhost:8083` | API Gateway |
+| `MS_GEOLOCALIZACION_URL` | `http://localhost:8084` | API Gateway y `ms-coincidencias` |
 | `MYSQL_ROOT_PASSWORD` | `rootpassword` | MySQL en Docker Compose |
 | `MYSQL_DATABASE` | `sanosysalvos_usuarios` | MySQL en Docker Compose |
 | `POSTGRES_USER` | `sonar` | SonarQube |
@@ -286,21 +280,6 @@ sanos-y-salvos-backend-vargas-vargas/
 │       │   │   ├── GatewaySanosysalvosApplication.java
 │       │   │   └── config/CorsConfig.java
 │       │   └── resources/application.properties
-├── bff-sanosysalvos/
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/sanosysalvos/bff/
-│       │   │   ├── BffSanosysalvosApplication.java
-│       │   │   ├── client/
-│       │   │   ├── config/
-│       │   │   ├── controller/
-│       │   │   ├── dto/
-│       │   │   ├── service/
-│       │   │   └── service/impl/
-│       │   └── resources/application.properties
-│       └── test/java/com/sanosysalvos/bff/
 ├── ms-usuarios/
 │   ├── Dockerfile
 │   ├── pom.xml
