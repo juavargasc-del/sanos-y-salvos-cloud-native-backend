@@ -1,6 +1,7 @@
 package com.sanosysalvos.usuarios.service;
 
 import com.sanosysalvos.usuarios.dto.UserDTO;
+import com.sanosysalvos.usuarios.dto.CurrentUserResponseDTO;
 import com.sanosysalvos.usuarios.model.User;
 
 import java.util.List;
@@ -17,6 +18,15 @@ public interface UserService {
     Optional<User> buscarPorEmail(String email);
 
     Optional<User> login(String email, String password);
+
+        CurrentUserResponseDTO currentUser(String externalTenantId, String externalObjectId);
+
+        CurrentUserResponseDTO linkMicrosoftIdentity(
+            String externalTenantId,
+            String externalObjectId,
+            String email,
+            String password
+        );
 
     void eliminarUsuario(Long id);
 }

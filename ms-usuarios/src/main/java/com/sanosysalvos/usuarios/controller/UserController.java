@@ -4,6 +4,11 @@ import com.sanosysalvos.usuarios.config.JwtService;
 import com.sanosysalvos.usuarios.dto.LoginRequestDTO;
 import com.sanosysalvos.usuarios.dto.LoginResponse;
 import com.sanosysalvos.usuarios.dto.UserDTO;
+import com.sanosysalvos.usuarios.dto.CreateUserRequestDTO;
+import com.sanosysalvos.usuarios.dto.CurrentUserResponseDTO;
+import com.sanosysalvos.usuarios.dto.MicrosoftLinkRequestDTO;
+import com.sanosysalvos.usuarios.service.impl.InvalidMicrosoftLinkException;
+import com.sanosysalvos.usuarios.service.impl.MicrosoftLinkConflictException;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.service.UserService;
 import jakarta.validation.Valid;
@@ -13,6 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,11 +42,53 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Crear usuario", description = "Registra un nuevo usuario en el sistema")
     @ApiResponse(responseCode = "200", description = "Usuario creado correctamente")
-    public ResponseEntity<User> guardarUsuario(@Valid @RequestBody User user) {
+    public ResponseEntity<UserDTO> guardarUsuario(@Valid @RequestBody CreateUserRequestDTO request) {
+
+        User user = User.builder()
+                .nombre(request.getNombre())
+                .email(request.getEmail())
+                .password(request.getPassword())
+                .build();
 
         User nuevoUsuario = userService.guardarUsuario(user);
 
-        return ResponseEntity.ok(nuevoUsuario);
+        return ResponseEntity.ok(UserDTO.builder()
+                .id(nuevoUsuario.getId())
+                .nombre(nuevoUsuario.getNombre())
+                .email(nuevoUsuario.getEmail())
+                .rol(nuevoUsuario.getRol())
+                .build());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<CurrentUserResponseDTO> currentUser(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+
+        return ResponseEntity.ok(userService.currentUser(
+                requiredClaim(jwt, "tid"),
+                requiredClaim(jwt, "oid")
+        ));
+    }
+
+    @PostMapping("/link-microsoft")
+    public ResponseEntity<?> linkMicrosoft(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody MicrosoftLinkRequestDTO request
+    ) {
+
+        try {
+            return ResponseEntity.ok(userService.linkMicrosoftIdentity(
+                    requiredClaim(jwt, "tid"),
+                    requiredClaim(jwt, "oid"),
+                    request.getEmail(),
+                    request.getPassword()
+            ));
+        } catch (InvalidMicrosoftLinkException exception) {
+            return ResponseEntity.status(401).body(exception.getMessage());
+        } catch (MicrosoftLinkConflictException exception) {
+            return ResponseEntity.status(409).body(exception.getMessage());
+        }
     }
 
     @PostMapping("/login")
@@ -103,5 +152,14 @@ public class UserController {
         userService.eliminarUsuario(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private String requiredClaim(Jwt jwt, String claimName) {
+
+        String claim = jwt.getClaimAsString(claimName);
+        if (claim == null || claim.isBlank()) {
+            throw new IllegalArgumentException("El token no contiene la identidad Microsoft requerida");
+        }
+        return claim;
     }
 }
