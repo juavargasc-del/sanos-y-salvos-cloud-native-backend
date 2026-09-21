@@ -5,19 +5,29 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY =
-            "miclavesupersecretamiclavesupersecret12345";
+    private final String secretKey;
+
+    public JwtService(@Value("${legacy.jwt.secret:}") String secretKey) {
+
+        this.secretKey = secretKey;
+    }
 
     private Key getSigningKey() {
 
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        if (secretKey.isBlank()) {
+            throw new IllegalStateException("LEGACY_JWT_SECRET is not configured");
+        }
+
+        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generarToken(String email) {

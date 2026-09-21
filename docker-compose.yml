@@ -65,6 +65,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanosysalvos_usuarios?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: rootpassword
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
 
   ms-mascotas:
     build:
@@ -81,6 +82,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanosysalvos_mascotas?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: rootpassword
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
 
   ms-coincidencias:
     build:
@@ -96,6 +98,7 @@ services:
     environment:
       MS_MASCOTAS_URL: http://ms-mascotas:8082
       MS_GEOLOCALIZACION_URL: http://ms-geolocalizacion:8084
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
 
   ms-geolocalizacion:
     build:
@@ -112,6 +115,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sanosysalvos_geolocalizacion?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: rootpassword
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
 
   gateway-sanosysalvos:
     build:

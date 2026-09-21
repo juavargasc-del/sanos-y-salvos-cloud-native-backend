@@ -7,7 +7,12 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", uniqueConstraints = {
+    @UniqueConstraint(
+        name = "uk_usuarios_external_identity",
+        columnNames = {"external_tenant_id", "external_object_id"}
+    )
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,6 +40,12 @@ public class User {
 
     @Column(nullable = false)
     private String rol;
+
+    @Column(name = "external_tenant_id")
+    private String externalTenantId;
+
+    @Column(name = "external_object_id")
+    private String externalObjectId;
 
     @PrePersist
     void asignarRolPorDefecto() {

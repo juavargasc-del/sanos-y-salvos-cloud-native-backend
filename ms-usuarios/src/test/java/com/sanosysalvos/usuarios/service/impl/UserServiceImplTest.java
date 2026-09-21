@@ -1,8 +1,11 @@
 package com.sanosysalvos.usuarios.service.impl;
 
 import com.sanosysalvos.usuarios.dto.UserDTO;
+import com.sanosysalvos.usuarios.dto.CurrentUserResponseDTO;
 import com.sanosysalvos.usuarios.model.User;
 import com.sanosysalvos.usuarios.repository.UserRepository;
+import com.sanosysalvos.usuarios.service.impl.InvalidMicrosoftLinkException;
+import com.sanosysalvos.usuarios.service.impl.MicrosoftLinkConflictException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +37,7 @@ class UserServiceImplTest {
     private UserServiceImpl userService;
 
     @Test
-    void guardarUsuario_debeGuardarUsuarioConRolExistente() {
+    void guardarUsuario_debeForzarRolUsuario() {
         User user = crearUser(null, "Ana", "ana@example.com", "secreta", "ADMIN");
 
         when(passwordEncoder.encode("secreta")).thenReturn("encoded-secreta");
@@ -42,7 +45,7 @@ class UserServiceImplTest {
 
         User resultado = userService.guardarUsuario(user);
 
-        assertEquals("ADMIN", resultado.getRol());
+        assertEquals("USUARIO", resultado.getRol());
         assertEquals("encoded-secreta", resultado.getPassword());
         verify(passwordEncoder).encode("secreta");
         verify(userRepository).save(user);
@@ -188,6 +191,80 @@ class UserServiceImplTest {
         assertEquals("ana@example.com", resultado.get().getEmail());
         verify(userRepository).findByEmail("ana@example.com");
     }
+
+        @Test
+        void currentUser_debeRetornarUsuarioVinculado() {
+        User user = crearUser(1L, "Ana", "ana@example.com", "encoded-secreta", "USUARIO");
+        user.setExternalTenantId("tenant");
+        user.setExternalObjectId("object");
+        when(userRepository.findByExternalTenantIdAndExternalObjectId("tenant", "object"))
+            .thenReturn(Optional.of(user));
+
+        CurrentUserResponseDTO resultado = userService.currentUser("tenant", "object");
+
+        assertTrue(resultado.isLinked());
+        assertEquals(1L, resultado.getUserId());
+        assertEquals("ana@example.com", resultado.getEmail());
+        }
+
+        @Test
+        void currentUser_debeIndicarQueLaCuentaNoEstaVinculada() {
+        when(userRepository.findByExternalTenantIdAndExternalObjectId("tenant", "object"))
+            .thenReturn(Optional.empty());
+
+        CurrentUserResponseDTO resultado = userService.currentUser("tenant", "object");
+
+        assertFalse(resultado.isLinked());
+        assertTrue(resultado.getMessage().contains("vincularse"));
+        }
+
+        @Test
+        void linkMicrosoftIdentity_debeVincularLaCuentaExistente() {
+        User user = crearUser(1L, "Ana", "ana@example.com", "encoded-secreta", "ADMIN");
+        when(userRepository.findByExternalTenantIdAndExternalObjectId("tenant", "object"))
+            .thenReturn(Optional.empty());
+        when(userRepository.findByEmail("ana@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secreta", "encoded-secreta")).thenReturn(true);
+        when(userRepository.save(user)).thenReturn(user);
+
+        CurrentUserResponseDTO resultado = userService.linkMicrosoftIdentity(
+            "tenant", "object", "ana@example.com", "secreta");
+
+        assertTrue(resultado.isLinked());
+        assertEquals(1L, resultado.getUserId());
+        assertEquals("tenant", user.getExternalTenantId());
+        assertEquals("object", user.getExternalObjectId());
+        }
+
+        @Test
+        void linkMicrosoftIdentity_debeRechazarPasswordIncorrecta() {
+        User user = crearUser(1L, "Ana", "ana@example.com", "encoded-secreta", "USUARIO");
+        when(userRepository.findByExternalTenantIdAndExternalObjectId("tenant", "object"))
+            .thenReturn(Optional.empty());
+        when(userRepository.findByEmail("ana@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("incorrecta", "encoded-secreta")).thenReturn(false);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            InvalidMicrosoftLinkException.class,
+            () -> userService.linkMicrosoftIdentity("tenant", "object", "ana@example.com", "incorrecta")
+        );
+        org.junit.jupiter.api.Assertions.assertNull(user.getExternalObjectId());
+        }
+
+        @Test
+        void linkMicrosoftIdentity_debeRechazarIdentidadYaVinculadaAOtroUsuario() {
+        User owner = crearUser(2L, "Luis", "luis@example.com", "encoded", "USUARIO");
+        User requested = crearUser(1L, "Ana", "ana@example.com", "encoded-secreta", "USUARIO");
+        when(userRepository.findByExternalTenantIdAndExternalObjectId("tenant", "object"))
+            .thenReturn(Optional.of(owner));
+        when(userRepository.findByEmail("ana@example.com")).thenReturn(Optional.of(requested));
+        when(passwordEncoder.matches("secreta", "encoded-secreta")).thenReturn(true);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            MicrosoftLinkConflictException.class,
+            () -> userService.linkMicrosoftIdentity("tenant", "object", "ana@example.com", "secreta")
+        );
+        }
 
     @Test
     void eliminarUsuario_debeInvocarDeleteById() {
