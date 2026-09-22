@@ -1,0 +1,58 @@
+services:
+  ms-usuarios:
+    build: ./ms-usuarios
+    env_file: .env.aws
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${RDS_HOST}:${RDS_PORT}/sanosysalvos_usuarios"
+      SPRING_DATASOURCE_USERNAME: "${RDS_USER}"
+      SPRING_DATASOURCE_PASSWORD: "${RDS_PASSWORD}"
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    restart: unless-stopped
+
+  ms-mascotas:
+    build: ./ms-mascotas
+    env_file: .env.aws
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${RDS_HOST}:${RDS_PORT}/sanosysalvos_mascotas"
+      SPRING_DATASOURCE_USERNAME: "${RDS_USER}"
+      SPRING_DATASOURCE_PASSWORD: "${RDS_PASSWORD}"
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    restart: unless-stopped
+
+  ms-geolocalizacion:
+    build: ./ms-geolocalizacion
+    env_file: .env.aws
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${RDS_HOST}:${RDS_PORT}/sanosysalvos_geolocalizacion"
+      SPRING_DATASOURCE_USERNAME: "${RDS_USER}"
+      SPRING_DATASOURCE_PASSWORD: "${RDS_PASSWORD}"
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    restart: unless-stopped
+
+  ms-coincidencias:
+    build: ./ms-coincidencias
+    environment:
+      MS_MASCOTAS_URL: "http://ms-mascotas:8082"
+      MS_GEOLOCALIZACION_URL: "http://ms-geolocalizacion:8084"
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    depends_on:
+      - ms-mascotas
+      - ms-geolocalizacion
+    restart: unless-stopped
+
+  gateway-sanosysalvos:
+    build: ./gateway-sanosysalvos
+    environment:
+      MS_USUARIOS_URL: "http://ms-usuarios:8081"
+      MS_MASCOTAS_URL: "http://ms-mascotas:8082"
+      MS_COINCIDENCIAS_URL: "http://ms-coincidencias:8083"
+      MS_GEOLOCALIZACION_URL: "http://ms-geolocalizacion:8084"
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ms-usuarios
+      - ms-mascotas
+      - ms-coincidencias
+      - ms-geolocalizacion
+    restart: unless-stopped
