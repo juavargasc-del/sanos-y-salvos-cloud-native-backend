@@ -1,6 +1,7 @@
 package com.sanosysalvos.mascotas.service.impl;
 
 import com.sanosysalvos.mascotas.dto.MascotaDTO;
+import com.sanosysalvos.mascotas.messaging.MascotaProducer;
 import com.sanosysalvos.mascotas.model.Mascota;
 import com.sanosysalvos.mascotas.repository.MascotaRepository;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ class MascotaServiceImplTest {
 
     @Mock
     private MascotaRepository mascotaRepository;
+
+    @Mock
+    private MascotaProducer mascotaProducer;
 
     @InjectMocks
     private MascotaServiceImpl mascotaService;

@@ -105,6 +105,28 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
+      MASCOTAS_RABBITMQ_SIMULATE_PROCESSING_ERROR: "${MASCOTAS_RABBITMQ_SIMULATE_PROCESSING_ERROR:-false}"
+
+  ms-rabbitmq-admin:
+    build:
+      context: ./ms-rabbitmq-admin
+    container_name: ms-rabbitmq-admin
+    ports:
+      - "127.0.0.1:8090:8090"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sanosysalvos-network
+    environment:
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_MANAGEMENT_BASE_URL: http://rabbitmq:15672
+      SPRING_PROFILES_ACTIVE: local-test
+      RABBITMQ_ADMIN_LOCAL_USERNAME: "${RABBITMQ_ADMIN_LOCAL_USERNAME:-rabbitmq-admin-local}"
+      RABBITMQ_ADMIN_LOCAL_PASSWORD: "${RABBITMQ_ADMIN_LOCAL_PASSWORD:?Set RABBITMQ_ADMIN_LOCAL_PASSWORD before starting ms-rabbitmq-admin}"
 
   ms-coincidencias:
     build:
