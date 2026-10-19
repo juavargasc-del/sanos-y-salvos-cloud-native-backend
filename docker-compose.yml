@@ -50,6 +50,25 @@ services:
       timeout: 20s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: sanosysalvos-rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - sanosysalvos-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5      
+
   ms-usuarios:
     build:
       context: ./ms-usuarios
@@ -83,6 +102,9 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: rootpassword
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
 
   ms-coincidencias:
     build:
@@ -146,3 +168,4 @@ volumes:
   sonarqube-data:
   sonarqube-extensions:
   sonarqube-logs:
+  rabbitmq-data:

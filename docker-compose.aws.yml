@@ -9,6 +9,21 @@ services:
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   ms-mascotas:
     build: ./ms-mascotas
     env_file: .env.aws
@@ -17,6 +32,12 @@ services:
       SPRING_DATASOURCE_USERNAME: "${RDS_USER}"
       SPRING_DATASOURCE_PASSWORD: "${RDS_PASSWORD}"
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: "${RABBITMQ_USER}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy  
     restart: unless-stopped
 
   ms-geolocalizacion:
@@ -56,3 +77,6 @@ services:
       - ms-coincidencias
       - ms-geolocalizacion
     restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
