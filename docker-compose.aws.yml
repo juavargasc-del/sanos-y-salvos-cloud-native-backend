@@ -40,6 +40,20 @@ services:
         condition: service_healthy  
     restart: unless-stopped
 
+  ms-rabbitmq-admin:
+    build: ./ms-rabbitmq-admin
+    env_file: .env.aws
+    environment:
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: "${RABBITMQ_USER}"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+      RABBITMQ_MANAGEMENT_BASE_URL: "http://rabbitmq:15672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
   ms-geolocalizacion:
     build: ./ms-geolocalizacion
     env_file: .env.aws
