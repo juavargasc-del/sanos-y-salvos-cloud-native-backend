@@ -6,6 +6,7 @@ import com.sanosysalvos.mascotas.repository.MascotaRepository;
 import com.sanosysalvos.mascotas.service.MascotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.sanosysalvos.mascotas.messaging.MascotaProducer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,13 +16,18 @@ import java.util.List;
 public class MascotaServiceImpl implements MascotaService {
 
     private final MascotaRepository mascotaRepository;
+    private final MascotaProducer mascotaProducer;
 
     @Override
     public MascotaDTO crearMascota(MascotaDTO mascotaDTO) {
         Mascota mascota = convertirAEntidad(mascotaDTO);
+
         Mascota mascotaGuardada = mascotaRepository.save(mascota);
+
+        mascotaProducer.publicarMascotaRegistrada(mascotaGuardada.getId());
+
         return convertirADTO(mascotaGuardada);
-    }
+   } 
 
     @Override
     public List<MascotaDTO> listarMascotas() {
