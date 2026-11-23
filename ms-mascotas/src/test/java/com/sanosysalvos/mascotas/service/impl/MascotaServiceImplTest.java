@@ -3,6 +3,9 @@ package com.sanosysalvos.mascotas.service.impl;
 import com.sanosysalvos.mascotas.dto.MascotaDTO;
 import com.sanosysalvos.mascotas.model.Mascota;
 import com.sanosysalvos.mascotas.repository.MascotaRepository;
+import com.sanosysalvos.mascotas.dto.MascotaEventoDTO;
+import com.sanosysalvos.mascotas.messaging.MascotaKafkaProducer;
+import com.sanosysalvos.mascotas.messaging.MascotaProducer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +28,12 @@ class MascotaServiceImplTest {
     @Mock
     private MascotaRepository mascotaRepository;
 
+    @Mock
+    private MascotaProducer mascotaProducer;
+
+    @Mock
+    private MascotaKafkaProducer mascotaKafkaProducer;
+
     @InjectMocks
     private MascotaServiceImpl mascotaService;
 
@@ -46,6 +55,8 @@ class MascotaServiceImplTest {
         assertEquals("Labrador", resultado.getRaza());
         assertEquals("ENCONTRADA", resultado.getEstado());
         verify(mascotaRepository).save(any(Mascota.class));
+        verify(mascotaProducer).publicarMascotaRegistrada(1L);
+        verify(mascotaKafkaProducer).publicar(any(MascotaEventoDTO.class));
     }
 
     @Test
@@ -130,6 +141,7 @@ class MascotaServiceImplTest {
         assertEquals("Golden", resultado.getRaza());
         assertEquals("PERDIDA", resultado.getEstado());
         verify(mascotaRepository).save(any(Mascota.class));
+        verify(mascotaKafkaProducer).publicar(any(MascotaEventoDTO.class));
     }
 
     @Test
