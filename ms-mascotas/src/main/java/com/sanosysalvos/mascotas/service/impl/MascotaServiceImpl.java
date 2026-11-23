@@ -6,10 +6,14 @@ import com.sanosysalvos.mascotas.repository.MascotaRepository;
 import com.sanosysalvos.mascotas.service.MascotaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.sanosysalvos.mascotas.dto.MascotaEventoDTO;
+import com.sanosysalvos.mascotas.messaging.MascotaKafkaProducer;
 import com.sanosysalvos.mascotas.messaging.MascotaProducer;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +21,7 @@ public class MascotaServiceImpl implements MascotaService {
 
     private final MascotaRepository mascotaRepository;
     private final MascotaProducer mascotaProducer;
+    private final MascotaKafkaProducer mascotaKafkaProducer;
 
     @Override
     public MascotaDTO crearMascota(MascotaDTO mascotaDTO) {
@@ -25,6 +30,9 @@ public class MascotaServiceImpl implements MascotaService {
         Mascota mascotaGuardada = mascotaRepository.save(mascota);
 
         mascotaProducer.publicarMascotaRegistrada(mascotaGuardada.getId());
+        mascotaKafkaProducer.publicar(crearEvento(
+                "MASCOTA_REGISTRADA",
+                mascotaGuardada));
 
         return convertirADTO(mascotaGuardada);
    } 
@@ -77,6 +85,9 @@ public class MascotaServiceImpl implements MascotaService {
         mascota.setEstado(mascotaDTO.getEstado());
 
         Mascota mascotaActualizada = mascotaRepository.save(mascota);
+        mascotaKafkaProducer.publicar(crearEvento(
+                "MASCOTA_ACTUALIZADA",
+                mascotaActualizada));
         return convertirADTO(mascotaActualizada);
     }
 
@@ -117,6 +128,18 @@ public class MascotaServiceImpl implements MascotaService {
                 .fotoBase64(mascota.getFotoBase64())
                 .fechaReporte(mascota.getFechaReporte())
                 .estado(mascota.getEstado())
+                .build();
+    }
+
+    private MascotaEventoDTO crearEvento(String tipoEvento, Mascota mascota) {
+        return MascotaEventoDTO.builder()
+                .eventId(UUID.randomUUID())
+                .tipoEvento(tipoEvento)
+                .mascotaId(mascota.getId())
+                .nombre(mascota.getNombre())
+                .estado(mascota.getEstado())
+                .usuarioId(mascota.getUsuarioId())
+                .timestamp(Instant.now())
                 .build();
     }
 }
