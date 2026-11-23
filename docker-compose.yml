@@ -178,6 +178,20 @@ services:
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
 
+  ms-kafka-admin:
+    build:
+      context: ./ms-kafka-admin
+    container_name: sanosysalvos-cloud-ms-kafka-admin
+    expose:
+      - "8085"
+    depends_on:
+      - kafka
+    networks:
+      - sanosysalvos-network
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+
   ms-geolocalizacion:
     build:
       context: ./ms-geolocalizacion
