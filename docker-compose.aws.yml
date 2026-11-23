@@ -125,6 +125,17 @@ services:
       - kafka
     restart: unless-stopped
 
+  ms-kafka-admin:
+    build: ./ms-kafka-admin
+    expose:
+      - "8085"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+    restart: unless-stopped
+
   gateway-sanosysalvos:
     build: ./gateway-sanosysalvos
     environment:
