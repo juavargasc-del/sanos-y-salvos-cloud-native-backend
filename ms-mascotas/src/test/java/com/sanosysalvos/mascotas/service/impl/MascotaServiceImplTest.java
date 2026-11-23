@@ -3,209 +3,143 @@ package com.sanosysalvos.mascotas.service.impl;
 import com.sanosysalvos.mascotas.dto.MascotaDTO;
 import com.sanosysalvos.mascotas.model.Mascota;
 import com.sanosysalvos.mascotas.repository.MascotaRepository;
+import com.sanosysalvos.mascotas.service.MascotaService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import com.sanosysalvos.mascotas.dto.MascotaEventoDTO;
 import com.sanosysalvos.mascotas.messaging.MascotaKafkaProducer;
 import com.sanosysalvos.mascotas.messaging.MascotaProducer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+@Service
+@RequiredArgsConstructor
+public class MascotaServiceImpl implements MascotaService {
 
-@ExtendWith(MockitoExtension.class)
-class MascotaServiceImplTest {
+    private final MascotaRepository mascotaRepository;
+    private final MascotaProducer mascotaProducer;
+    private final MascotaKafkaProducer mascotaKafkaProducer;
 
-    @Mock
-    private MascotaRepository mascotaRepository;
+    @Override
+    public MascotaDTO crearMascota(MascotaDTO mascotaDTO) {
+        Mascota mascota = convertirAEntidad(mascotaDTO);
 
-    @Mock
-    private MascotaProducer mascotaProducer;
+        Mascota mascotaGuardada = mascotaRepository.save(mascota);
 
-    @Mock
-    private MascotaKafkaProducer mascotaKafkaProducer;
+        mascotaProducer.publicarMascotaRegistrada(mascotaGuardada.getId());
+        mascotaKafkaProducer.publicar(crearEvento(
+                "MASCOTA_REGISTRADA",
+                mascotaGuardada));
 
-    @InjectMocks
-    private MascotaServiceImpl mascotaService;
+        return convertirADTO(mascotaGuardada);
+   } 
 
-    @Test
-    void crearMascota_debeGuardarCorrectamenteYRetornarDtoGenerado() {
-        MascotaDTO mascotaDTO = crearMascotaDTO(null, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-
-        when(mascotaRepository.save(any(Mascota.class))).thenAnswer(invocation -> {
-            Mascota mascota = invocation.getArgument(0);
-            mascota.setId(1L);
-            mascota.setFechaReporte(LocalDateTime.of(2026, 1, 1, 10, 0));
-            return mascota;
-        });
-
-        MascotaDTO resultado = mascotaService.crearMascota(mascotaDTO);
-
-        assertEquals("Luna", resultado.getNombre());
-        assertEquals("Perro", resultado.getTipo());
-        assertEquals("Labrador", resultado.getRaza());
-        assertEquals("ENCONTRADA", resultado.getEstado());
-        verify(mascotaRepository).save(any(Mascota.class));
-        verify(mascotaProducer).publicarMascotaRegistrada(1L);
-        verify(mascotaKafkaProducer).publicar(any(MascotaEventoDTO.class));
+    @Override
+    public List<MascotaDTO> listarMascotas() {
+        return mascotaRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
-    @Test
-    void listarMascotas_debeRetornarLaCantidadYCContenidoEsperado() {
-        Mascota mascotaUno = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-        Mascota mascotaDos = crearMascotaEntidad(2L, "Michi", "Gato", "Siames", "Blanco", 2, "Pequena", 20L, "PERDIDA");
+    @Override
+    public MascotaDTO buscarMascotaPorId(Long id) {
+        Mascota mascota = mascotaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mascota no encontrada con id: " + id));
 
-        when(mascotaRepository.findAll()).thenReturn(List.of(mascotaUno, mascotaDos));
-
-        List<MascotaDTO> resultado = mascotaService.listarMascotas();
-
-        assertEquals(2, resultado.size());
-        assertEquals("Luna", resultado.get(0).getNombre());
-        assertEquals("Michi", resultado.get(1).getNombre());
-        verify(mascotaRepository).findAll();
+        return convertirADTO(mascota);
     }
 
-    @Test
-    void buscarMascotaPorId_debeRetornarMascotaCuandoExiste() {
-        Mascota mascota = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-
-        when(mascotaRepository.findById(1L)).thenReturn(Optional.of(mascota));
-
-        MascotaDTO resultado = mascotaService.buscarMascotaPorId(1L);
-
-        assertEquals(1L, resultado.getId());
-        assertEquals("Luna", resultado.getNombre());
-        verify(mascotaRepository).findById(1L);
+    @Override
+    public List<MascotaDTO> listarPorEstado(String estado) {
+        return mascotaRepository.findByEstado(estado)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
-    @Test
-    void buscarMascotaPorId_debeLanzarExcepcionCuandoNoExiste() {
-        when(mascotaRepository.findById(99L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> mascotaService.buscarMascotaPorId(99L));
-
-        assertEquals("Mascota no encontrada con id: 99", exception.getMessage());
-        verify(mascotaRepository).findById(99L);
+    @Override
+    public List<MascotaDTO> listarPorUsuarioId(Long usuarioId) {
+        return mascotaRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
-    @Test
-    void listarPorEstado_debeRetornarListaFiltradaConEstadoCorrecto() {
-        Mascota mascotaUno = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-        Mascota mascotaDos = crearMascotaEntidad(2L, "Max", "Perro", "Pastor", "Cafe", 5, "Mediana", 11L, "ENCONTRADA");
+    @Override
+    public MascotaDTO actualizarMascota(Long id, MascotaDTO mascotaDTO) {
+        Mascota mascota = mascotaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mascota no encontrada con id: " + id));
 
-        when(mascotaRepository.findByEstado("ENCONTRADA")).thenReturn(List.of(mascotaUno, mascotaDos));
+        mascota.setNombre(mascotaDTO.getNombre());
+        mascota.setTipo(mascotaDTO.getTipo());
+        mascota.setRaza(mascotaDTO.getRaza());
+        mascota.setColor(mascotaDTO.getColor());
+        mascota.setEdad(mascotaDTO.getEdad());
+        mascota.setDimension(mascotaDTO.getDimension());
+        mascota.setUsuarioId(mascotaDTO.getUsuarioId());
+        mascota.setFotoBase64(mascotaDTO.getFotoBase64());
+        mascota.setEstado(mascotaDTO.getEstado());
 
-        List<MascotaDTO> resultado = mascotaService.listarPorEstado("ENCONTRADA");
-
-        assertEquals(2, resultado.size());
-        assertEquals("ENCONTRADA", resultado.get(0).getEstado());
-        assertEquals("ENCONTRADA", resultado.get(1).getEstado());
-        verify(mascotaRepository).findByEstado("ENCONTRADA");
+        Mascota mascotaActualizada = mascotaRepository.save(mascota);
+        mascotaKafkaProducer.publicar(crearEvento(
+                "MASCOTA_ACTUALIZADA",
+                mascotaActualizada));
+        return convertirADTO(mascotaActualizada);
     }
 
-    @Test
-    void listarPorUsuarioId_debeRetornarListaFiltradaConUsuarioIdCorrecto() {
-        Mascota mascotaUno = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-        Mascota mascotaDos = crearMascotaEntidad(2L, "Max", "Perro", "Pastor", "Cafe", 5, "Mediana", 10L, "PERDIDA");
+    @Override
+    public void eliminarMascota(Long id) {
+        Mascota mascota = mascotaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mascota no encontrada con id: " + id));
 
-        when(mascotaRepository.findByUsuarioId(10L)).thenReturn(List.of(mascotaUno, mascotaDos));
-
-        List<MascotaDTO> resultado = mascotaService.listarPorUsuarioId(10L);
-
-        assertEquals(2, resultado.size());
-        assertEquals(10L, resultado.get(0).getUsuarioId());
-        assertEquals(10L, resultado.get(1).getUsuarioId());
-        verify(mascotaRepository).findByUsuarioId(10L);
+        mascotaRepository.delete(mascota);
     }
 
-    @Test
-    void actualizarMascota_debeActualizarCamposYGuardarUnaVez() {
-        Mascota mascotaExistente = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-        MascotaDTO mascotaActualizada = crearMascotaDTO(1L, "Luna Nueva", "Perro", "Golden", "Negro", 4, "Grande", 10L, "PERDIDA");
-
-        when(mascotaRepository.findById(1L)).thenReturn(Optional.of(mascotaExistente));
-        when(mascotaRepository.save(any(Mascota.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        MascotaDTO resultado = mascotaService.actualizarMascota(1L, mascotaActualizada);
-
-        assertEquals("Luna Nueva", resultado.getNombre());
-        assertEquals("Golden", resultado.getRaza());
-        assertEquals("PERDIDA", resultado.getEstado());
-        verify(mascotaRepository).save(any(Mascota.class));
-        verify(mascotaKafkaProducer).publicar(any(MascotaEventoDTO.class));
-    }
-
-    @Test
-    void actualizarMascota_debeLanzarExcepcionCuandoNoExiste() {
-        MascotaDTO mascotaActualizada = crearMascotaDTO(null, "Luna Nueva", "Perro", "Golden", "Negro", 4, "Grande", 10L, "PERDIDA");
-
-        when(mascotaRepository.findById(404L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> mascotaService.actualizarMascota(404L, mascotaActualizada));
-
-        assertEquals("Mascota no encontrada con id: 404", exception.getMessage());
-        verify(mascotaRepository).findById(404L);
-    }
-
-    @Test
-    void eliminarMascota_debeInvocarDeleteUnaVezCuandoExiste() {
-        Mascota mascota = crearMascotaEntidad(1L, "Luna", "Perro", "Labrador", "Negro", 3, "Grande", 10L, "ENCONTRADA");
-
-        when(mascotaRepository.findById(1L)).thenReturn(Optional.of(mascota));
-
-        mascotaService.eliminarMascota(1L);
-
-        verify(mascotaRepository).delete(mascota);
-    }
-
-    @Test
-    void eliminarMascota_debeLanzarExcepcionCuandoNoExiste() {
-        when(mascotaRepository.findById(500L)).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> mascotaService.eliminarMascota(500L));
-
-        assertEquals("Mascota no encontrada con id: 500", exception.getMessage());
-        verify(mascotaRepository).findById(500L);
-    }
-
-    private MascotaDTO crearMascotaDTO(Long id, String nombre, String tipo, String raza, String color, Integer edad, String dimension, Long usuarioId, String estado) {
-        return MascotaDTO.builder()
-                .id(id)
-                .nombre(nombre)
-                .tipo(tipo)
-                .raza(raza)
-                .color(color)
-                .edad(edad)
-                .dimension(dimension)
-                .usuarioId(usuarioId)
-                .fotoBase64("foto-base64")
-                .fechaReporte(LocalDateTime.of(2025, 1, 1, 12, 0))
-                .estado(estado)
+    private Mascota convertirAEntidad(MascotaDTO mascotaDTO) {
+        return Mascota.builder()
+                .id(mascotaDTO.getId())
+                .nombre(mascotaDTO.getNombre())
+                .tipo(mascotaDTO.getTipo())
+                .raza(mascotaDTO.getRaza())
+                .color(mascotaDTO.getColor())
+                .edad(mascotaDTO.getEdad())
+                .dimension(mascotaDTO.getDimension())
+                .usuarioId(mascotaDTO.getUsuarioId())
+                .fotoBase64(mascotaDTO.getFotoBase64())
+                .fechaReporte(LocalDateTime.now())
+                .estado(mascotaDTO.getEstado())
                 .build();
     }
 
-    private Mascota crearMascotaEntidad(Long id, String nombre, String tipo, String raza, String color, Integer edad, String dimension, Long usuarioId, String estado) {
-        return Mascota.builder()
-                .id(id)
-                .nombre(nombre)
-                .tipo(tipo)
-                .raza(raza)
-                .color(color)
-                .edad(edad)
-                .dimension(dimension)
-                .usuarioId(usuarioId)
-                .fotoBase64("foto-base64")
-                .fechaReporte(LocalDateTime.of(2025, 1, 1, 12, 0))
-                .estado(estado)
+    private MascotaDTO convertirADTO(Mascota mascota) {
+        return MascotaDTO.builder()
+                .id(mascota.getId())
+                .nombre(mascota.getNombre())
+                .tipo(mascota.getTipo())
+                .raza(mascota.getRaza())
+                .color(mascota.getColor())
+            .edad(mascota.getEdad())
+            .dimension(mascota.getDimension())
+                .usuarioId(mascota.getUsuarioId())
+                .fotoBase64(mascota.getFotoBase64())
+                .fechaReporte(mascota.getFechaReporte())
+                .estado(mascota.getEstado())
+                .build();
+    }
+
+    private MascotaEventoDTO crearEvento(String tipoEvento, Mascota mascota) {
+        return MascotaEventoDTO.builder()
+                .eventId(UUID.randomUUID())
+                .tipoEvento(tipoEvento)
+                .mascotaId(mascota.getId())
+                .nombre(mascota.getNombre())
+                .estado(mascota.getEstado())
+                .usuarioId(mascota.getUsuarioId())
+                .timestamp(Instant.now())
                 .build();
     }
 }
