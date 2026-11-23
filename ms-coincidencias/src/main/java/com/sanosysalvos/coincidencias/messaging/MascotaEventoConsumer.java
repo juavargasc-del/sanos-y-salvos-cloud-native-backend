@@ -6,10 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
+import com.sanosysalvos.coincidencias.dto.MascotaAlertaDTO;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class MascotaEventoConsumer {
 
     public static final String TOPIC = "mascotas-eventos";
@@ -20,6 +28,18 @@ public class MascotaEventoConsumer {
             Set.of("MASCOTA_REGISTRADA", "MASCOTA_ACTUALIZADA");
     private static final Set<String> ESTADOS_PERMITIDOS =
             Set.of("PERDIDA", "ENCONTRADA");
+    private static final int EVENTOS_PROCESADOS_MAXIMOS = 10000;
+
+    private final MascotaAlertaKafkaProducer mascotaAlertaKafkaProducer;
+
+    private final Map<UUID, Boolean> eventosProcesados =
+            Collections.synchronizedMap(new LinkedHashMap<>(64, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(
+                        Map.Entry<UUID, Boolean> eldest) {
+                    return size() > EVENTOS_PROCESADOS_MAXIMOS;
+                }
+            });
 
     @KafkaListener(
             topics = TOPIC,
@@ -41,6 +61,45 @@ public class MascotaEventoConsumer {
                 record.partition(),
                 record.offset(),
                 record.key());
+
+        boolean nuevoEvento;
+        synchronized (eventosProcesados) {
+            nuevoEvento = !eventosProcesados.containsKey(evento.getEventId());
+            if (nuevoEvento) {
+                eventosProcesados.put(evento.getEventId(), Boolean.TRUE);
+            }
+        }
+
+        if (nuevoEvento) {
+            generarAlertaSiCorresponde(evento);
+        } else {
+            log.info(
+                    "[KAFKA] Evento duplicado ignorado eventId={} topic={} partition={} offset={}",
+                    evento.getEventId(),
+                    record.topic(),
+                    record.partition(),
+                    record.offset());
+        }
+    }
+
+    void generarAlertaSiCorresponde(MascotaEventoDTO evento) {
+        if (!"MASCOTA_REGISTRADA".equals(evento.getTipoEvento())
+                || !"PERDIDA".equals(evento.getEstado())) {
+            return;
+        }
+
+        MascotaAlertaDTO alerta = MascotaAlertaDTO.builder()
+                .alertaId(UUID.randomUUID())
+                .eventoOrigenId(evento.getEventId())
+                .mascotaId(evento.getMascotaId())
+                .usuarioId(evento.getUsuarioId())
+                .tipoAlerta("MASCOTA_PERDIDA_REGISTRADA")
+                .mensaje("Se registro una mascota perdida con ID "
+                        + evento.getMascotaId())
+                .timestamp(Instant.now())
+                .build();
+
+        mascotaAlertaKafkaProducer.publicar(alerta);
     }
 
     void validarEvento(ConsumerRecord<String, MascotaEventoDTO> record,
