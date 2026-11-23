@@ -169,12 +169,14 @@ services:
     depends_on:
       - ms-mascotas
       - ms-geolocalizacion
+      - kafka
     networks:
       - sanosysalvos-network
     environment:
       MS_MASCOTAS_URL: http://ms-mascotas:8082
       MS_GEOLOCALIZACION_URL: http://ms-geolocalizacion:8084
       JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
 
   ms-geolocalizacion:
     build:
